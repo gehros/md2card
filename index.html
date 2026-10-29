@@ -1,0 +1,224 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>md2card · 把 Markdown 变成一张好看的长图</title>
+<meta name="description" content="把一段 Markdown 变成可以直接发布的长图。纯前端、零依赖、无需上传，内容不出浏览器。" />
+<meta name="theme-color" content="#f2f1ed" />
+<link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'><rect width='32' height='32' rx='8' fill='%231b1b19'/><path d='M8 22V10h3l5 6 5-6h3v12h-3v-7l-5 6-5-6v7z' fill='%23f7f3ea'/></svg>" />
+<link rel="stylesheet" href="style.css" />
+
+<!-- =========================================================
+     card-style：卡片自身的全部样式。
+     导出的那一步会把这一整段 <style> 原样塞进 SVG，
+     所以这里不能引用任何外部资源（字体、图片、@import）。
+     ——这也是为什么整个项目只用系统字体。
+     ========================================================= -->
+<style id="card-style">
+/* 主题变量：写在属性选择器上，测量容器和真实卡片都能吃到 */
+[data-theme="paper"]{
+  --bg:#fbf6ec; --fg:#2b2620; --muted:#8a8072; --accent:#b4471f;
+  --rule:#e3dac6; --code-bg:#f1e9d8; --code-fg:#544c3c; --quote-bg:#f4ebd9;
+  --font-body:-apple-system,"PingFang SC","Microsoft YaHei",system-ui,sans-serif;
+  --font-title:"Songti SC","STSong","SimSun",Georgia,serif;
+}
+[data-theme="ink"]{
+  --bg:#17181b; --fg:#eae7e0; --muted:#8d8a83; --accent:#e0a55f;
+  --rule:#31333a; --code-bg:#202228; --code-fg:#b8c4c0; --quote-bg:#1e2024;
+  --font-body:-apple-system,"PingFang SC","Microsoft YaHei",system-ui,sans-serif;
+  --font-title:"Songti SC","STSong","SimSun",Georgia,serif;
+}
+[data-theme="mint"]{
+  --bg:linear-gradient(158deg,#eaf6ef 0%,#e4eef8 62%,#e9f0fb 100%);
+  --fg:#20352e; --muted:#6c8580; --accent:#2f7d63;
+  --rule:#cfdfd8; --code-bg:#dcebe4; --code-fg:#2e5c4e; --quote-bg:#dcece5;
+  --font-body:-apple-system,"PingFang SC","Microsoft YaHei",system-ui,sans-serif;
+  --font-title:-apple-system,"PingFang SC","Microsoft YaHei",system-ui,sans-serif;
+}
+[data-theme="mono"]{
+  --bg:#ffffff; --fg:#141414; --muted:#8c8c8c; --accent:#141414;
+  --rule:#e8e8e8; --code-bg:#f6f6f6; --code-fg:#3c3c3c; --quote-bg:#fafafa;
+  --font-body:-apple-system,"PingFang SC","Microsoft YaHei",system-ui,sans-serif;
+  --font-title:-apple-system,"PingFang SC","Microsoft YaHei",system-ui,sans-serif;
+}
+
+.card{
+  position:relative; box-sizing:border-box;
+  width:750px; padding:68px 72px 108px;
+  display:flex; flex-direction:column;
+  background:var(--bg); color:var(--fg);
+  font-family:var(--font-body); font-size:28px; line-height:1.8;
+  text-align:left; overflow:hidden;
+  -webkit-font-smoothing:antialiased;
+}
+.card *, .card *::before, .card *::after{ box-sizing:border-box; }
+/* 左上角那道小色条，成本一行，气质全靠它 */
+.card::before{
+  content:""; position:absolute; top:0; left:0;
+  width:132px; height:6px; background:var(--accent);
+}
+
+.card-body{
+  flex:1 1 auto; min-height:0; overflow:hidden;
+  --gap:26px;
+}
+.card-body > *{ margin:0 0 var(--gap); }
+.card-body > *:last-child{ margin-bottom:0; }
+
+.card-body h1{
+  font-family:var(--font-title); font-size:46px; line-height:1.35;
+  font-weight:700; letter-spacing:.5px; margin-bottom:32px;
+}
+.card-body h2{ font-family:var(--font-title); font-size:36px; line-height:1.4; font-weight:700; }
+.card-body h3{ font-size:30px; font-weight:600; line-height:1.5; }
+.card-body h4,.card-body h5,.card-body h6{ font-size:28px; font-weight:600; color:var(--muted); }
+
+.card-body p{ margin:0 0 var(--gap); }
+.card-body strong{ font-weight:700; }
+.card-body em{ font-style:italic; }
+.card-body del{ color:var(--muted); }
+
+.card-body a{
+  color:var(--accent); text-decoration:underline;
+  text-underline-offset:5px; text-decoration-thickness:2px;
+}
+
+.card-body code{
+  font-family:ui-monospace,SFMono-Regular,Menlo,Consolas,"Liberation Mono",monospace;
+  font-size:.88em; background:var(--code-bg); color:var(--code-fg);
+  padding:.08em .34em; border-radius:6px;
+}
+.card-body pre{
+  background:var(--code-bg); border-radius:14px;
+  padding:26px 28px; overflow:hidden;
+}
+.card-body pre code{
+  display:block; background:none; padding:0;
+  font-size:22px; line-height:1.72; color:var(--code-fg);
+  white-space:pre-wrap; word-break:break-word;
+}
+
+.card-body blockquote{
+  margin:0 0 var(--gap); padding:22px 26px;
+  background:var(--quote-bg); border-left:4px solid var(--accent);
+  border-radius:0 10px 10px 0; color:var(--muted);
+}
+.card-body blockquote > *:last-child{ margin-bottom:0; }
+.card-body blockquote p{ margin-bottom:0; }
+
+.card-body ul,.card-body ol{ margin:0 0 var(--gap); padding-left:1.35em; }
+.card-body ul{ list-style:none; }
+.card-body ul > li{ position:relative; }
+.card-body ul > li::before{
+  content:""; position:absolute; left:-.95em; top:.72em;
+  width:8px; height:8px; border-radius:50%; background:var(--accent);
+}
+.card-body ol{ list-style:decimal; }
+.card-body li{ margin:0 0 12px; }
+.card-body li:last-child{ margin-bottom:0; }
+.card-body li > ul,.card-body li > ol{ margin:12px 0 0; }
+
+.card-body hr{ border:none; height:1px; background:var(--rule); margin:34px 0; }
+
+.card-foot{
+  position:absolute; left:72px; right:72px; bottom:40px;
+  display:flex; align-items:center; justify-content:space-between;
+  font-size:18px; letter-spacing:.14em; text-transform:uppercase; color:var(--muted);
+}
+.card-foot .brand{ font-weight:600; }
+.card-foot .pageno{ font-variant-numeric:tabular-nums; letter-spacing:.06em; }
+
+/* 内容被裁掉时，底部给一条渐隐，提示「这里还有」 */
+.card.has-overflow .card-body{
+  -webkit-mask-image:linear-gradient(180deg,#000 84%,transparent 100%);
+          mask-image:linear-gradient(180deg,#000 84%,transparent 100%);
+}
+</style>
+</head>
+
+<body>
+<header class="topbar">
+  <div class="brand">
+    <span class="brand-mark">M</span>
+    <span class="brand-name">md2card</span>
+    <span class="brand-tag">Markdown → 长图</span>
+  </div>
+
+  <div class="controls">
+    <div class="group" role="group" aria-label="主题">
+      <button class="swatch" data-theme="paper" title="纸感" aria-label="纸感主题"><i></i></button>
+      <button class="swatch" data-theme="ink"   title="墨黑" aria-label="墨黑主题"><i></i></button>
+      <button class="swatch" data-theme="mint"  title="薄荷" aria-label="薄荷主题"><i></i></button>
+      <button class="swatch" data-theme="mono"  title="极简" aria-label="极简主题"><i></i></button>
+    </div>
+
+    <div class="group segmented" role="group" aria-label="尺寸比例">
+      <button data-ratio="3:4" class="on">3:4</button>
+      <button data-ratio="1:1">1:1</button>
+    </div>
+
+    <button id="btnExportAll" class="btn ghost" hidden>导出全部</button>
+    <button id="btnExport" class="btn primary">
+      <span id="exportLabel">导出当前页</span>
+      <kbd>⌘/Ctrl ↵</kbd>
+    </button>
+  </div>
+</header>
+
+<main class="layout">
+  <section class="pane pane-editor">
+    <div class="pane-head">
+      <span class="pane-title">Markdown</span>
+      <div class="pane-actions">
+        <span id="charCount" class="dim">0 字</span>
+        <button id="btnSample" class="link">示例</button>
+        <button id="btnClear" class="link">清空</button>
+      </div>
+    </div>
+    <textarea
+      id="input"
+      class="editor"
+      spellcheck="false"
+      autocomplete="off"
+      placeholder="在这里写 Markdown，右边实时变成卡片…"
+      aria-label="Markdown 输入"></textarea>
+  </section>
+
+  <section class="pane pane-preview">
+    <div class="pane-head">
+      <span class="pane-title">预览</span>
+      <span id="pageInfo" class="dim">共 1 张</span>
+    </div>
+    <div id="canvasArea" class="canvas-area">
+      <div id="pages" class="pages"></div>
+    </div>
+  </section>
+</main>
+
+<footer class="bottombar">
+  <span class="dot"></span>
+  <span>纯本地渲染，内容不会上传到任何服务器</span>
+  <span class="sep">·</span>
+  <span id="sizeInfo">750 × 1000</span>
+  <span class="grow"></span>
+  <!-- 上线后把这里换成你的仓库地址 -->
+  <span class="dim">零依赖 · 零构建</span>
+</footer>
+
+<!-- 测量容器：不可见，但必须是一个「真实的卡片」。
+     如果只放 .card-body，就吃不到 .card 上的字号和行高，
+     量出来的高度会腰斩——这是最容易踩的一个坑。 -->
+<div id="measureHost" class="card" data-theme="paper" aria-hidden="true">
+  <div class="card-body"></div>
+</div>
+
+<div id="toast" class="toast" role="status" aria-live="polite"></div>
+
+<noscript>
+  <p style="padding:24px">这个工具完全依赖 JavaScript 渲染，请在浏览器设置里开启后刷新。</p>
+</noscript>
+
+<script src="app.js"></script>
+</body>
+</html>

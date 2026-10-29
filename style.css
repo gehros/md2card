@@ -1,0 +1,352 @@
+/* =========================================================
+   应用外壳的样式。卡片的样式在 index.html 的 <style id="card-style"> 里，
+   因为导出时要把那一整段序列化进 SVG。
+   ========================================================= */
+
+:root{
+  --shell-bg:#f2f1ed;
+  --panel:#ffffff;
+  --line:#e4e2db;
+  --ink:#1b1b19;
+  --muted:#78766e;
+  --accent:#b4471f;
+  --accent-soft:#f6e8e0;
+  --radius:14px;
+  --mono:ui-monospace,SFMono-Regular,Menlo,Consolas,"Liberation Mono",monospace;
+}
+
+*{ box-sizing:border-box; }
+
+html,body{ height:100%; }
+
+body{
+  margin:0;
+  height:100vh;
+  display:flex;
+  flex-direction:column;
+  overflow:hidden;
+  background:var(--shell-bg);
+  color:var(--ink);
+  font:14px/1.55 -apple-system,"PingFang SC","Microsoft YaHei",system-ui,sans-serif;
+  -webkit-font-smoothing:antialiased;
+}
+
+button{ font:inherit; color:inherit; cursor:pointer; }
+
+/* hidden 属性会被 .btn 的 display:flex 顶掉，必须显式压回去 */
+[hidden]{ display:none !important; }
+
+/* ---------------- 顶栏 ---------------- */
+
+.topbar{
+  flex:0 0 auto;
+  height:62px;
+  padding:0 20px;
+  display:flex;
+  align-items:center;
+  gap:20px;
+  background:var(--panel);
+  border-bottom:1px solid var(--line);
+}
+
+.brand{ display:flex; align-items:center; gap:10px; }
+
+.brand-mark{
+  width:28px; height:28px;
+  display:grid; place-items:center;
+  border-radius:8px;
+  background:var(--ink); color:#f7f3ea;
+  font-family:Georgia,serif; font-size:16px; font-weight:700;
+  line-height:1;
+}
+
+.brand-name{ font-size:15px; font-weight:650; letter-spacing:.02em; }
+
+.brand-tag{
+  padding-left:10px;
+  margin-left:2px;
+  border-left:1px solid var(--line);
+  color:var(--muted);
+  font-size:12.5px;
+}
+
+.controls{ margin-left:auto; display:flex; align-items:center; gap:10px; }
+
+.group{ display:flex; align-items:center; gap:6px; }
+
+/* 主题色块 */
+.swatch{
+  width:30px; height:30px;
+  padding:0;
+  border:1px solid var(--line);
+  border-radius:9px;
+  background:var(--panel);
+  display:grid; place-items:center;
+  transition:border-color .15s, transform .15s;
+}
+.swatch i{
+  width:16px; height:16px; border-radius:50%;
+  display:block;
+  border:1px solid rgba(0,0,0,.08);
+}
+.swatch[data-theme="paper"] i{ background:linear-gradient(135deg,#fbf6ec 45%,#b4471f 46%); }
+.swatch[data-theme="ink"]   i{ background:linear-gradient(135deg,#17181b 45%,#e0a55f 46%); }
+.swatch[data-theme="mint"]  i{ background:linear-gradient(135deg,#e6f2ec 45%,#2f7d63 46%); }
+.swatch[data-theme="mono"]  i{ background:linear-gradient(135deg,#fff 45%,#141414 46%); }
+.swatch:hover{ transform:translateY(-1px); }
+.swatch[aria-pressed="true"]{
+  border-color:var(--ink);
+  box-shadow:0 0 0 2px var(--panel), 0 0 0 3px var(--ink);
+}
+
+/* 比例分段控件 */
+.segmented{
+  padding:3px;
+  gap:2px;
+  background:var(--shell-bg);
+  border:1px solid var(--line);
+  border-radius:10px;
+}
+.segmented button{
+  padding:5px 11px;
+  border:0;
+  border-radius:7px;
+  background:transparent;
+  color:var(--muted);
+  font-size:12.5px;
+  font-variant-numeric:tabular-nums;
+  transition:background .15s, color .15s;
+}
+.segmented button.on{
+  background:var(--panel);
+  color:var(--ink);
+  box-shadow:0 1px 2px rgba(0,0,0,.07);
+}
+
+/* 按钮 */
+.btn{
+  display:flex; align-items:center; gap:8px;
+  height:34px;
+  padding:0 14px;
+  border-radius:10px;
+  border:1px solid transparent;
+  font-size:13.5px;
+  font-weight:550;
+  transition:background .15s, border-color .15s, opacity .15s;
+}
+.btn.primary{ background:var(--accent); color:#fff; }
+.btn.primary:hover{ background:#9d3d1a; }
+.btn.primary:disabled{ opacity:.55; cursor:default; }
+.btn.ghost{ background:var(--panel); border-color:var(--line); color:var(--ink); }
+.btn.ghost:hover{ border-color:#cfccc2; }
+.btn kbd{
+  padding:1px 5px;
+  border-radius:4px;
+  background:rgba(255,255,255,.18);
+  font:11px/1.6 var(--mono);
+  opacity:.85;
+}
+
+/* ---------------- 主体两栏 ---------------- */
+
+.layout{
+  flex:1 1 auto;
+  min-height:0;
+  display:grid;
+  grid-template-columns:minmax(360px, 42%) 1fr;
+  gap:14px;
+  padding:14px;
+}
+
+.pane{
+  min-height:0;
+  min-width:0;
+  display:flex;
+  flex-direction:column;
+  background:var(--panel);
+  border:1px solid var(--line);
+  border-radius:var(--radius);
+  overflow:hidden;
+}
+
+.pane-head{
+  flex:0 0 auto;
+  height:44px;
+  padding:0 16px;
+  display:flex;
+  align-items:center;
+  gap:10px;
+  border-bottom:1px solid var(--line);
+}
+
+.pane-title{
+  font-size:12px;
+  font-weight:650;
+  letter-spacing:.12em;
+  text-transform:uppercase;
+  color:var(--muted);
+}
+
+.pane-actions{ margin-left:auto; display:flex; align-items:center; gap:12px; }
+
+.dim{ color:var(--muted); font-size:12.5px; font-variant-numeric:tabular-nums; }
+
+.link{
+  padding:0;
+  border:0;
+  background:none;
+  color:var(--muted);
+  font-size:12.5px;
+  text-decoration:underline;
+  text-underline-offset:3px;
+}
+.link:hover{ color:var(--accent); }
+
+.editor{
+  flex:1 1 auto;
+  width:100%;
+  padding:20px 20px 40px;
+  border:0;
+  outline:0;
+  resize:none;
+  background:transparent;
+  color:var(--ink);
+  font-family:var(--mono);
+  font-size:14.5px;
+  line-height:1.85;
+  tab-size:2;
+}
+.editor::placeholder{ color:#b3b1a8; }
+
+/* 预览区：浅灰底 + 细格栅，衬托卡片 */
+.canvas-area{
+  flex:1 1 auto;
+  min-height:0;
+  overflow:auto;
+  padding:22px 16px 40px;
+  display:flex;
+  justify-content:center;
+  background-color:#f7f6f3;
+  background-image:
+    linear-gradient(rgba(0,0,0,.028) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(0,0,0,.028) 1px, transparent 1px);
+  background-size:22px 22px;
+}
+
+.pages{ display:flex; flex-direction:column; align-items:center; }
+
+.page{ margin-bottom:26px; }
+
+.page-bar{
+  display:flex;
+  align-items:center;
+  gap:10px;
+  height:30px;
+  margin-bottom:6px;
+  font-size:12px;
+  color:var(--muted);
+  font-variant-numeric:tabular-nums;
+}
+.page-bar .mini{
+  padding:2px 9px;
+  border:1px solid var(--line);
+  border-radius:7px;
+  background:var(--panel);
+  font-size:12px;
+  color:var(--ink);
+}
+/* 只有第一个按钮顶到右边，剩下的跟在它后面 */
+.page-bar .dim + .mini{ margin-left:auto; }
+.page-bar .mini + .mini{ margin-left:6px; }
+.page-bar .mini:hover{ border-color:#cfccc2; }
+
+/* 卡片投影只加在预览里，导出的是卡片本身，不含投影 */
+.card{
+  box-shadow:0 6px 22px rgba(28,25,20,.10), 0 1px 3px rgba(28,25,20,.06);
+  border-radius:4px;
+}
+
+/* 空状态 */
+.empty{
+  margin:auto;
+  padding:40px;
+  max-width:320px;
+  text-align:center;
+  color:var(--muted);
+  font-size:13px;
+  line-height:1.8;
+}
+.empty b{ display:block; margin-bottom:6px; color:var(--ink); font-size:14px; }
+
+/* 测量容器：不占位、不可见，但参与布局 */
+#measureHost{
+  position:absolute;
+  left:-99999px;
+  top:0;
+  width:750px;
+  height:auto;
+  visibility:hidden;
+  pointer-events:none;
+  box-shadow:none;
+}
+
+/* ---------------- 底栏 ---------------- */
+
+.bottombar{
+  flex:0 0 auto;
+  height:38px;
+  padding:0 20px;
+  display:flex;
+  align-items:center;
+  gap:8px;
+  border-top:1px solid var(--line);
+  background:var(--panel);
+  color:var(--muted);
+  font-size:12px;
+}
+.bottombar .dot{
+  width:6px; height:6px; border-radius:50%;
+  background:#4f9d6b;
+  box-shadow:0 0 0 3px rgba(79,157,107,.15);
+}
+.bottombar .sep{ opacity:.5; }
+.bottombar .grow{ flex:1 1 auto; }
+
+/* ---------------- Toast ---------------- */
+
+.toast{
+  position:fixed;
+  left:50%;
+  bottom:64px;
+  transform:translate(-50%, 12px);
+  padding:9px 16px;
+  border-radius:10px;
+  background:#1b1b19;
+  color:#f7f3ea;
+  font-size:13px;
+  opacity:0;
+  pointer-events:none;
+  transition:opacity .18s, transform .18s;
+  z-index:50;
+}
+.toast.show{ opacity:1; transform:translate(-50%, 0); }
+
+/* ---------------- 窄屏 ---------------- */
+
+@media (max-width: 900px){
+  body{ height:auto; overflow:auto; }
+  .topbar{ height:auto; padding:10px 14px; flex-wrap:wrap; gap:10px; }
+  .controls{ margin-left:0; width:100%; flex-wrap:wrap; }
+  .brand-tag{ display:none; }
+  .layout{
+    grid-template-columns:1fr;
+    height:auto;
+    padding:10px;
+    gap:10px;
+  }
+  .pane-editor{ height:38vh; }
+  .pane-preview{ height:64vh; }
+  .canvas-area{ padding:14px 8px 24px; }
+  .bottombar{ font-size:11px; }
+  .btn kbd{ display:none; }
+}
